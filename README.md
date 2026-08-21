@@ -44,7 +44,7 @@ Install dependencies and compile TypeScript, then start with: node dist/index.js
 
 Provide TEAMLINE_API_KEY in the environment when launching. After install, the bin name is mcp-teamline.
 
-## Tools (M0, M2, M3)
+## Tools
 
 | Tool | Input | Description |
 | --- | --- | --- |
