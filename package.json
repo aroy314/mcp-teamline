@@ -22,7 +22,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "tsx --test tests/client.test.ts",
+    "test": "tsx --test tests/client.test.ts tests/tasks.test.ts",
     "start": "node dist/index.js",
     "prepare": "tsc"
   },

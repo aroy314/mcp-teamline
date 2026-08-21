@@ -44,13 +44,16 @@ Install dependencies and compile TypeScript, then start with: node dist/index.js
 
 Provide TEAMLINE_API_KEY in the environment when launching. After install, the bin name is mcp-teamline.
 
-## Tools (M0)
+## Tools (M0, M2)
 
 | Tool | Input | Description |
 | --- | --- | --- |
 | teamline_auth_test | none | Calls Teamline auth.test and returns the authenticated user as JSON (id, name, email). |
+| teamline_tasks_list | optional: limit (number), channel (#name or slackId), list (~name or id; channel required if list is set), user (@name, email, or slackId), complete (boolean; true = only completed) | Calls Teamline tasks.list. If channel and user are omitted, the API defaults to yourself. Returns the task array as JSON. |
+| teamline_tasks_create | name (required); optional: description, assign (string[] of @name/email/slackId), channel, list (channel required if set), personal (boolean), due (ISO8601 or human string), notify (string[]) | Calls Teamline tasks.create. Returns the created task as JSON. |
+| teamline_tasks_complete | task (required, id string) | Calls Teamline tasks.complete. Returns the completed task as JSON. |
 
-If TEAMLINE_API_KEY is missing, the tool returns a clear error without calling the network.
+If TEAMLINE_API_KEY is missing, tools return a clear error without calling the network.
 
 ## License
 
