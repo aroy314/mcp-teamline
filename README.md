@@ -44,7 +44,7 @@ Install dependencies and compile TypeScript, then start with: node dist/index.js
 
 Provide TEAMLINE_API_KEY in the environment when launching. After install, the bin name is mcp-teamline.
 
-## Tools (M0, M2)
+## Tools (M0, M2, M3)
 
 | Tool | Input | Description |
 | --- | --- | --- |
@@ -52,6 +52,8 @@ Provide TEAMLINE_API_KEY in the environment when launching. After install, the b
 | teamline_tasks_list | optional: limit (number), channel (#name or slackId), list (~name or id; channel required if list is set), user (@name, email, or slackId), complete (boolean; true = only completed) | Calls Teamline tasks.list. If channel and user are omitted, the API defaults to yourself. Returns the task array as JSON. |
 | teamline_tasks_create | name (required); optional: description, assign (string[] of @name/email/slackId), channel, list (channel required if set), personal (boolean), due (ISO8601 or human string), notify (string[]) | Calls Teamline tasks.create. Returns the created task as JSON. |
 | teamline_tasks_complete | task (required, id string) | Calls Teamline tasks.complete. Returns the completed task as JSON. |
+| teamline_webhooks_create | event (required, currently only `tasks_completed`), url (required), name (optional) | Calls Teamline webhooks.create to register a user-provided URL. This server registers the URL; it does not receive webhook POSTs. Returns the hook as JSON. |
+| teamline_webhooks_remove | hook (required, id string) | Calls Teamline webhooks.remove. Returns the removed hook as JSON. |
 
 If TEAMLINE_API_KEY is missing, tools return a clear error without calling the network.
 

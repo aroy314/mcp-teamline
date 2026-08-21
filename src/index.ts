@@ -6,6 +6,7 @@ import {
   TeamlineError,
   type TasksCreateParams,
   type TasksListParams,
+  type WebhooksCreateParams,
 } from "./client.js";
 
 export const SERVER_NAME = "mcp-teamline";
@@ -108,6 +109,37 @@ const tasksCompleteInput = fromJsonSchema<{ task: string }>({
   required: ["task"],
 });
 
+const webhooksCreateInput = fromJsonSchema<WebhooksCreateParams>({
+  type: "object",
+  properties: {
+    event: {
+      type: "string",
+      description:
+        "Webhook event. Official API currently only supports tasks_completed.",
+    },
+    url: {
+      type: "string",
+      description: "URL Teamline will POST to when the event fires",
+    },
+    name: {
+      type: "string",
+      description: "Optional display name for the webhook",
+    },
+  },
+  required: ["event", "url"],
+});
+
+const webhooksRemoveInput = fromJsonSchema<{ hook: string }>({
+  type: "object",
+  properties: {
+    hook: {
+      type: "string",
+      description: "Id of the hook to remove",
+    },
+  },
+  required: ["hook"],
+});
+
 export function createServer(): McpServer {
   const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION });
 
@@ -206,6 +238,56 @@ export function createServer(): McpServer {
         return successJson(task);
       } catch (err) {
         return errorResult("teamline_tasks_complete", err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "teamline_webhooks_create",
+    {
+      title: "Create a Teamline webhook",
+      description:
+        "Register a user-provided URL via webhooks.create. Official event is currently only tasks_completed. url is required; name is optional. This server registers the URL; the MCP stdio process does not receive Teamline POSTs. Token is read only from TEAMLINE_API_KEY.",
+      inputSchema: webhooksCreateInput,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
+    },
+    async (args) => {
+      try {
+        const client = new TeamlineClient();
+        const hook = await client.webhooksCreate(args);
+        return successJson(hook);
+      } catch (err) {
+        return errorResult("teamline_webhooks_create", err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "teamline_webhooks_remove",
+    {
+      title: "Remove a Teamline webhook",
+      description:
+        "Remove a Teamline webhook via webhooks.remove. Requires hook (id string). Token is read only from TEAMLINE_API_KEY.",
+      inputSchema: webhooksRemoveInput,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
+    },
+    async (args) => {
+      try {
+        const client = new TeamlineClient();
+        const hook = await client.webhooksRemove(args.hook);
+        return successJson(hook);
+      } catch (err) {
+        return errorResult("teamline_webhooks_remove", err);
       }
     },
   );

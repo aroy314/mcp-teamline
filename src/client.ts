@@ -1,5 +1,5 @@
 /**
- * Teamline HTTP client (M0: auth.test; M2: tasks.list / tasks.create / tasks.complete).
+ * Teamline HTTP client (M0: auth.test; M2: tasks.*; M3: webhooks.create / webhooks.remove).
  *
  * Official API: https://support.teamline.app/article/64-integrating-using-the-teamline-api
  * Base URL: https://integration.teamline.app/api/
@@ -37,6 +37,13 @@ export interface TasksCreateParams {
   personal?: boolean;
   due?: string;
   notify?: string[];
+}
+
+/** Input for webhooks.create (token is injected from TEAMLINE_API_KEY). */
+export interface WebhooksCreateParams {
+  name?: string;
+  event: string;
+  url: string;
 }
 
 export class TeamlineError extends Error {
@@ -107,6 +114,25 @@ function isPresent(value: unknown): boolean {
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim() !== "";
+}
+
+/**
+ * Prefer official data.hook; accept live drift under data.webhook or data.hooks
+ * when that value is a single object (not an array), same pattern as tasks.complete.
+ */
+function pickHookRecord(
+  data: Record<string, unknown>,
+  endpoint: string,
+): Record<string, unknown> {
+  const candidates = [data.hook, data.webhook, data.hooks];
+  for (const candidate of candidates) {
+    if (isRecord(candidate)) {
+      return candidate;
+    }
+  }
+  throw new TeamlineError(
+    `Teamline ${endpoint} succeeded but data.hook was missing or not an object`,
+  );
 }
 
 /** Official doc: channel is required if list is present. Fail before fetch. */
@@ -252,6 +278,42 @@ export class TeamlineClient {
       );
     }
     return task;
+  }
+
+  /**
+   * POST webhooks.create and return data.hook (object).
+   * Official event is currently only tasks_completed. Fail before fetch if event
+   * is empty/not that value, or if url is empty/not a string.
+   * Live API may use data.webhook or data.hooks (object); prefer data.hook.
+   */
+  async webhooksCreate(params: WebhooksCreateParams): Promise<Record<string, unknown>> {
+    if (!isNonEmptyString(params.event)) {
+      throw new TeamlineError("event is required");
+    }
+    if (params.event !== "tasks_completed") {
+      throw new TeamlineError("event must be tasks_completed");
+    }
+    if (typeof params.url !== "string" || params.url.trim() === "") {
+      throw new TeamlineError("url is required");
+    }
+    const data = await this.post("webhooks.create", {
+      name: params.name,
+      event: params.event,
+      url: params.url,
+    });
+    return pickHookRecord(data, "webhooks.create");
+  }
+
+  /**
+   * POST webhooks.remove and return data.hook (object).
+   * Fail before fetch if hook id is empty. Same live-key fallback as create.
+   */
+  async webhooksRemove(hookId: string): Promise<Record<string, unknown>> {
+    if (!isNonEmptyString(hookId)) {
+      throw new TeamlineError("hook is required");
+    }
+    const data = await this.post("webhooks.remove", { hook: hookId });
+    return pickHookRecord(data, "webhooks.remove");
   }
 
   /**
